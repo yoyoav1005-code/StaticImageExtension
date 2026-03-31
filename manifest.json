@@ -1,41 +1,11 @@
 {
-  "name": "Static Image Extension",
-  "version": "1.0.0",
-  "author": "Your Name",
-  "description": "A simple extension that displays a static image on the side of the screen",
-  "entry": "index.js",
-  "style": "style.css",
-  "minSTVersion": "1.0.0",
-  "tags": ["ui", "visual"],
-  "settings": [
-    {
-      "key": "imagePath",
-      "label": "Image Path",
-      "type": "text",
-      "default": "assets/placeholder.png",
-      "description": "Path to the static image to display"
-    },
-    {
-      "key": "position",
-      "label": "Position",
-      "type": "select",
-      "options": ["right", "left"],
-      "default": "right",
-      "description": "Which side of the screen to display the image"
-    },
-    {
-      "key": "width",
-      "label": "Panel Width (px)",
-      "type": "number",
-      "default": 300,
-      "description": "Width of the image panel in pixels"
-    },
-    {
-      "key": "showCloseButton",
-      "label": "Show Close Button",
-      "type": "boolean",
-      "default": true,
-      "description": "Whether to show a close button on the panel"
-    }
-  ]
+    "display_name": "Static Image Extension",
+    "loading_order": 9,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Your Name",
+    "version": "1.0.0",
+    "homePage": "https://github.com/yourusername/static-image-extension"
 }
