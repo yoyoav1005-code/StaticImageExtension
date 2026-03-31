@@ -1,0 +1,88 @@
+<div class="extension-settings-panel">
+  <h3>Static Image Extension Settings</h3>
+  
+  <div class="setting-group">
+    <label for="static-image-path">Image Path</label>
+    <input type="text" id="static-image-path" placeholder="Enter image path or URL">
+    <small>Path to image file or URL. Leave empty to use placeholder.</small>
+  </div>
+  
+  <div class="setting-group">
+    <label for="static-image-position">Position</label>
+    <select id="static-image-position">
+      <option value="right">Right</option>
+      <option value="left">Left</option>
+      <option value="center">Center</option>
+    </select>
+    <small>Where to display the static image panel.</small>
+  </div>
+  
+  <div class="setting-group checkbox-group">
+    <label>
+      <input type="checkbox" id="static-image-show-close">
+      Show Close Button
+    </label>
+    <small>Enable/disable the close button on the image panel.</small>
+  </div>
+</div>
+
+<style>
+.extension-settings-panel {
+  padding: 10px;
+}
+
+.extension-settings-panel h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #fff;
+}
+
+.setting-group {
+  margin-bottom: 15px;
+}
+
+.setting-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #ccc;
+  font-size: 14px;
+}
+
+.setting-group input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+  font-size: 14px;
+}
+
+.setting-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+  font-size: 14px;
+}
+
+.setting-group small {
+  display: block;
+  margin-top: 5px;
+  color: #888;
+  font-size: 12px;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin-right: 8px;
+}
+</style>
