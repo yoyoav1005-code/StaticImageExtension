@@ -77,6 +77,37 @@ function saveAllSettings() {
 }
 
 /**
+ * Remove the currently selected image from the available images list
+ */
+function removeCurrentImage() {
+    const select = $('#static_image_url');
+    const selectedIndex = parseInt(select.val());
+    const availableImages = extension_settings[extensionName].availableImages;
+    
+    if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= availableImages.length) {
+        toastr.error('Please select an image to remove');
+        return;
+    }
+    
+    const removedImage = availableImages[selectedIndex];
+    
+    // Remove the image from the array
+    availableImages.splice(selectedIndex, 1);
+    
+    // If the removed image was the current image, set to placeholder
+    if (extension_settings[extensionName].imageUrl === removedImage) {
+        extension_settings[extensionName].imageUrl = defaultSettings.imageUrl;
+        updatePanelImage();
+    }
+    
+    // Update the UI
+    populateSettingsUI();
+    saveAllSettings();
+    
+    toastr.info(`Removed image: ${removedImage}`);
+}
+
+/**
  * Apply settings to the UI
  */
 function applySettings() {
@@ -293,6 +324,9 @@ function setupSettingsListeners() {
     
     // Save settings button
     $('#static_image_save_settings').on('click', saveAllSettings);
+    
+    // Remove image button
+    $('#static_image_remove_image').on('click', removeCurrentImage);
 }
 
 /**
