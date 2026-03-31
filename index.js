@@ -53,60 +53,58 @@ function getSettings() {
 }
 
 /**
- * Build the settings panel HTML
- * @returns {string} Settings HTML
+ * Save all current settings from UI to storage
  */
-function buildSettingsPanel() {
+function saveAllSettings() {
     const settings = getSettings();
     
-    return `
-        <div class="setting-group">
-            <label class="setting-label">
-                <input type="checkbox" id="static_image_enabled" ${settings.enabled ? 'checked' : ''}>
-                Enable Static Image Panel
-            </label>
-        </div>
-        
-        <div class="setting-group">
-            <label for="static_image_url">Image Source:</label>
-            <select id="static_image_url" class="setting-control">
-                ${settings.availableImages.map(img => 
-                    `<option value="${img}" ${settings.imageUrl === img ? 'selected' : ''}>${img.split('/').pop()}</option>`
-                ).join('')}
-            </select>
-        </div>
-        
-        <div class="setting-group">
-            <label for="static_image_width">Panel Width: <span id="static_image_width_value">${settings.panelWidth}px</span></label>
-            <input type="range" id="static_image_width" class="setting-control" 
-                   min="150" max="400" value="${settings.panelWidth}">
-        </div>
-        
-        <div class="setting-group">
-            <label class="setting-label">
-                <input type="checkbox" id="static_image_collapsed" ${settings.collapsed ? 'checked' : ''}>
-                Start Collapsed
-            </label>
-        </div>
-        
-        <div class="setting-group">
-            <label class="setting-label">
-                <input type="checkbox" id="static_image_autohide" ${settings.autoHide ? 'checked' : ''}>
-                Auto-hide when idle
-            </label>
-        </div>
-        
-        <div class="setting-group" id="static_image_delay_group" style="${settings.autoHide ? '' : 'display:none'}">
-            <label for="static_image_delay">Hide After (seconds):</label>
-            <input type="number" id="static_image_delay" class="setting-control" 
-                   min="5" max="300" value="${settings.autoHideDelay}">
-        </div>
-        
-        <div class="setting-group">
-            <button id="static_image_add_image" class="setting-btn">Add Custom Image</button>
-            <small class="setting-hint">Add image path (e.g., assets/myimage.png)</small>
-        </div>
-    `;
+    // Get values from UI elements
+    settings.enabled = $('#static_image_enabled').prop('checked');
+    settings.imageUrl = $('#static_image_url').val();
+    settings.panelWidth = parseInt($('#static_image_width').val(), 10);
+    settings.collapsed = $('#static_image_collapsed').prop('checked');
+    settings.autoHide = $('#static_image_autohide').prop('checked');
+    settings.autoHideDelay = parseInt($('#static_image_delay').val(), 10);
+    
+    // Save to SillyTavern's storage
+    saveSettingsDebounced();
+    
+    // Show success message
+    toastr.success('Settings saved successfully!', 'Static Image Extension');
+    
+    // Apply changes
+    applySettings();
+}
+
+/**
+ * Apply settings to the UI
+ */
+function applySettings() {
+    const settings = getSettings();
+    
+    // Update panel width
+    if ($('#static_image_panel').length) {
+        $('#static_image_panel').css('width', settings.panelWidth + 'px');
+    }
+    
+    // Update panel image
+    updatePanelImage();
+    
+    // Update collapsed state
+    if (settings.collapsed) {
+        $('#static_image_panel').addClass('collapsed');
+        $('#static_image_panel .panel-content').hide();
+    } else {
+        $('#static_image_panel').removeClass('collapsed');
+        $('#static_image_panel .panel-content').show();
+    }
+    
+    // Show/hide panel based on enabled state
+    if (settings.enabled) {
+        $('#static_image_panel').fadeIn(200);
+    } else {
+        $('#static_image_panel').fadeOut(200);
+    }
 }
 
 /**
@@ -230,20 +228,39 @@ function setupKeyboardShortcuts() {
 }
 
 /**
- * Setup event listeners
+ * Setup event listeners for settings panel
  */
-function setupEventListeners() {
-    const { eventSource, event_types } = getContext();
-    
-    // Panel collapse button
-    $('#static_image_collapse_btn').on('click', function() {
+function setupSettingsListeners() {
+    // Enable/disable checkbox
+    $('#static_image_enabled').on('change', function() {
         const settings = getSettings();
-        togglePanelCollapsed(!settings.collapsed);
+        settings.enabled = $(this).prop('checked');
+    });
+    
+    // Image source dropdown
+    $('#static_image_url').on('change', function() {
+        const settings = getSettings();
+        settings.imageUrl = $(this).val();
     });
     
     // Width slider
     $('#static_image_width').on('input', function(e) {
-        updatePanelWidth(parseInt(e.target.value, 10));
+        const width = parseInt(e.target.value, 10);
+        $('#static_image_width_value').text(width + 'px');
+        $('#static_image_panel').css('width', width + 'px');
+    });
+    
+    // Collapsed checkbox
+    $('#static_image_collapsed').on('change', function() {
+        const settings = getSettings();
+        settings.collapsed = $(this).prop('checked');
+    });
+    
+    // Auto-hide checkbox
+    $('#static_image_autohide').on('change', function() {
+        const settings = getSettings();
+        settings.autoHide = $(this).prop('checked');
+        $('#static_image_delay_group').toggle(settings.autoHide);
     });
     
     // Add image button
@@ -268,11 +285,26 @@ function setupEventListeners() {
             const option = $(`<option value="${imagePath}">${imagePath.split('/').pop()}</option>`);
             $('#static_image_url').append(option);
             
-            saveSettingsDebounced();
             alert('Image added! Place the image file in the specified path.');
         } else {
             alert('This image is already in the list.');
         }
+    });
+    
+    // Save settings button
+    $('#static_image_save_settings').on('click', saveAllSettings);
+}
+
+/**
+ * Setup event listeners for panel
+ */
+function setupPanelListeners() {
+    const { eventSource, event_types } = getContext();
+    
+    // Panel collapse button
+    $('#static_image_collapse_btn').on('click', function() {
+        const settings = getSettings();
+        togglePanelCollapsed(!settings.collapsed);
     });
     
     // Mouse/keyboard activity for auto-hide
@@ -291,6 +323,36 @@ function setupEventListeners() {
             idleTimer = null;
         }
     });
+}
+
+/**
+ * Populate settings UI with current values
+ */
+function populateSettingsUI() {
+    const settings = getSettings();
+    
+    // Populate checkbox values
+    $('#static_image_enabled').prop('checked', settings.enabled);
+    $('#static_image_collapsed').prop('checked', settings.collapsed);
+    $('#static_image_autohide').prop('checked', settings.autoHide);
+    
+    // Populate image dropdown
+    const $dropdown = $('#static_image_url');
+    $dropdown.empty();
+    settings.availableImages.forEach(img => {
+        const selected = img === settings.imageUrl ? 'selected' : '';
+        $dropdown.append($(`<option value="${img}" ${selected}>${img.split('/').pop()}</option>`));
+    });
+    
+    // Populate slider
+    $('#static_image_width').val(settings.panelWidth);
+    $('#static_image_width_value').text(settings.panelWidth + 'px');
+    
+    // Populate delay
+    $('#static_image_delay').val(settings.autoHideDelay);
+    
+    // Show/hide delay group
+    $('#static_image_delay_group').toggle(settings.autoHide);
 }
 
 /**
@@ -322,7 +384,8 @@ async function init() {
     }
     
     // Setup event listeners
-    setupEventListeners();
+    setupSettingsListeners();
+    setupPanelListeners();
     setupKeyboardShortcuts();
     
     // Start auto-hide timer if enabled
@@ -341,9 +404,12 @@ jQuery(async () => {
     // Append settings to extensions settings panel
     $("#extensions_settings").append(settingsHtml);
     
+    // Populate settings UI
+    populateSettingsUI();
+    
     // Initialize the extension
     await init();
 });
 
 // Export functions for settings panel
-export { getSettings, updatePanelImage, updatePanelWidth, togglePanelCollapsed };
+export { getSettings, updatePanelImage, updatePanelWidth, togglePanelCollapsed, saveAllSettings };
