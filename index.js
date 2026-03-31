@@ -57,6 +57,7 @@
   /**
    * Load and display the image
    */
+  
   async function loadImage() {
     if (!imageContainer) return;
 
