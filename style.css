@@ -1,124 +1,252 @@
-/* Static Image Extension Styles */
+/* ========================================
+   Static Image Extension Styles
+   ======================================== */
 
-/* Main panel container */
+/* Panel Container - Full size visible state */
 .static-image-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100vh;
-  background-color: var(--bg-color, #1a1a1a);
-  border-left: 1px solid var(--border-color, #333);
-  padding: 16px;
-  box-sizing: border-box;
-  overflow: hidden;
-  z-index: 1000;
-  transition: transform 0.3s ease;
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 9999;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
 }
 
-.static-image-panel.left {
-  right: auto;
-  left: 0;
-  border-left: none;
-  border-right: 1px solid var(--border-color, #333);
+/* The image element */
+.static-image-panel img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
-.static-image-panel.hidden {
-  transform: translateX(100%);
+/* Collapsed Tab State */
+.static-image-tab {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 80px;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    cursor: pointer;
+    border-radius: 5px 0 0 5px;
+    overflow: hidden;
+    transition: width 0.3s ease;
 }
 
-.static-image-panel.left.hidden {
-  transform: translateX(-100%);
+.static-image-tab:hover {
+    width: 60px;
 }
 
-/* Panel header */
-.static-image-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-color, #333);
+.static-image-tab img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
-.static-image-panel-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-color, #fff);
-  margin: 0;
+/* Settings Button */
+.static-image-settings {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10001;
+    color: white;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Close button */
-.static-image-close-btn {
-  background: none;
-  border: none;
-  color: var(--text-color, #fff);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+.static-image-settings:hover {
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
-.static-image-close-btn:hover {
-  background-color: var(--hover-color, #333);
+/* Settings Modal */
+.static-image-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #2a2a2a;
+    color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    z-index: 10002;
+    min-width: 400px;
+    max-width: 600px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
 }
 
-/* Image container */
-.static-image-container {
-  width: 100%;
-  height: calc(100% - 56px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 8px;
-  background-color: var(--panel-bg, #2a2a2a);
+.static-image-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 10001;
 }
 
-/* The static image */
-.static-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border-radius: 4px;
+/* Modal Header */
+.static-image-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
 }
 
-/* Loading state */
-.static-image-container.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.static-image-modal-title {
+    font-size: 18px;
+    font-weight: bold;
 }
 
-.static-image-container.loading::after {
-  content: "Loading...";
-  color: var(--text-color, #fff);
-  font-size: 14px;
+.static-image-modal-close {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 24px;
+    cursor: pointer;
 }
 
-/* Error state */
-.static-image-container.error {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: var(--error-color, #ff6b6b);
-  padding: 20px;
+/* Form Elements */
+.static-image-form-group {
+    margin-bottom: 15px;
 }
 
-.static-image-container.error::after {
-  content: "Failed to load image";
+.static-image-form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
 }
 
-/* Responsive adjustments */
+/* Image Selection Dropdown */
+.static-image-dropdown {
+    width: 100%;
+    padding: 10px;
+    background-color: #3a3a3a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 14px;
+}
+
+.static-image-dropdown option {
+    background-color: #3a3a3a;
+    color: #ffffff;
+}
+
+/* Thumbnail in Dropdown */
+.static-image-dropdown option[data-thumbnail] {
+    /* Note: Thumbnails in dropdown options are limited by browser support */
+    /* CSS scaling of images is used instead */
+}
+
+/* Drag-and-Drop Upload Area */
+.static-image-upload-area {
+    border: 2px dashed #555;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    background-color: #3a3a3a;
+    cursor: pointer;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.static-image-upload-area:hover {
+    border-color: #4a90d9;
+    background-color: #444;
+}
+
+.static-image-upload-area.drag-over {
+    border-color: #4a90d9;
+    background-color: #4a90d933;
+}
+
+.static-image-upload-area p {
+    margin: 0;
+    color: #aaa;
+}
+
+/* Toggle Switch */
+.static-image-toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.static-image-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.static-image-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.static-image-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #555;
+    transition: 0.4s;
+    border-radius: 26px;
+}
+
+.static-image-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .static-image-toggle-slider {
+    background-color: #4a90d9;
+}
+
+input:checked + .static-image-toggle-slider:before {
+    transform: translateX(24px);
+}
+
+/* Responsive Adjustments */
 @media (max-width: 768px) {
-  .static-image-panel {
-    width: 200px;
-  }
+    .static-image-panel {
+        width: 150px;
+    }
+    
+    .static-image-tab {
+        width: 40px;
+        height: 60px;
+    }
+    
+    .static-image-modal {
+        min-width: 300px;
+        max-width: 90%;
+    }
 }

@@ -1,11 +1,14 @@
 {
-    "display_name": "Static Image Extension",
-    "loading_order": 9,
+    "display_name": "Static Side Image",
+    "loading_order": 10,
     "requires": [],
     "optional": [],
+    "dependencies": [],
     "js": "index.js",
     "css": "style.css",
     "author": "Your Name",
     "version": "1.0.0",
-    "homePage": "https://github.com/yourusername/static-image-extension"
+    "homePage": "https://github.com/yourusername/static-image-extension",
+    "auto_update": false,
+    "minimum_client_version": "1.0.0"
 }
