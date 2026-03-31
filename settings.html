@@ -1,88 +1,141 @@
-<div class="extension-settings-panel">
-  <h3>Static Image Extension Settings</h3>
-  
-  <div class="setting-group">
-    <label for="static-image-path">Image Path</label>
-    <input type="text" id="static-image-path" placeholder="Enter image path or URL">
-    <small>Path to image file or URL. Leave empty to use placeholder.</small>
-  </div>
-  
-  <div class="setting-group">
-    <label for="static-image-position">Position</label>
-    <select id="static-image-position">
-      <option value="right">Right</option>
-      <option value="left">Left</option>
-      <option value="center">Center</option>
-    </select>
-    <small>Where to display the static image panel.</small>
-  </div>
-  
-  <div class="setting-group checkbox-group">
-    <label>
-      <input type="checkbox" id="static-image-show-close">
-      Show Close Button
-    </label>
-    <small>Enable/disable the close button on the image panel.</small>
-  </div>
+<div id="static-image-settings">
+    <div class="setting-group">
+        <label class="setting-label">
+            <input type="checkbox" id="static_image_enabled">
+            Enable Static Image Panel
+        </label>
+    </div>
+    
+    <div class="setting-group">
+        <label for="static_image_url">Image Source:</label>
+        <select id="static_image_url" class="setting-control">
+        </select>
+    </div>
+    
+    <div class="setting-group">
+        <label for="static_image_width">Panel Width: <span id="static_image_width_value">250px</span></label>
+        <input type="range" id="static_image_width" class="setting-control" 
+               min="150" max="400" value="250">
+    </div>
+    
+    <div class="setting-group">
+        <label class="setting-label">
+            <input type="checkbox" id="static_image_collapsed">
+            Start Collapsed
+        </label>
+    </div>
+    
+    <div class="setting-group">
+        <label class="setting-label">
+            <input type="checkbox" id="static_image_autohide">
+            Auto-hide when idle
+        </label>
+    </div>
+    
+    <div class="setting-group" id="static_image_delay_group">
+        <label for="static_image_delay">Hide After (seconds):</label>
+        <input type="number" id="static_image_delay" class="setting-control" 
+               min="5" max="300" value="30">
+    </div>
+    
+    <div class="setting-group">
+        <button id="static_image_add_image" class="setting-btn">Add Custom Image</button>
+        <small class="setting-hint">Add image path (e.g., assets/myimage.png)</small>
+    </div>
 </div>
 
-<style>
-.extension-settings-panel {
-  padding: 10px;
-}
-
-.extension-settings-panel h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 16px;
-  color: #fff;
-}
-
-.setting-group {
-  margin-bottom: 15px;
-}
-
-.setting-group label {
-  display: block;
-  margin-bottom: 5px;
-  color: #ccc;
-  font-size: 14px;
-}
-
-.setting-group input[type="text"] {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #444;
-  border-radius: 4px;
-  background: #222;
-  color: #fff;
-  font-size: 14px;
-}
-
-.setting-group select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #444;
-  border-radius: 4px;
-  background: #222;
-  color: #fff;
-  font-size: 14px;
-}
-
-.setting-group small {
-  display: block;
-  margin-top: 5px;
-  color: #888;
-  font-size: 12px;
-}
-
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.checkbox-group input[type="checkbox"] {
-  margin-right: 8px;
-}
-</style>
+<script>
+(function() {
+    const MODULE_NAME = 'StaticImageExtension';
+    
+    // Get settings from extension
+    const extension = window[MODULE_NAME];
+    if (!extension) return;
+    
+    const settings = extension.getSettings();
+    
+    // Populate image dropdown
+    const dropdown = document.getElementById('static_image_url');
+    settings.availableImages.forEach(img => {
+        const option = document.createElement('option');
+        option.value = img;
+        option.textContent = img.split('/').pop();
+        if (img === settings.imageUrl) {
+            option.selected = true;
+        }
+        dropdown.appendChild(option);
+    });
+    
+    // Set initial values
+    document.getElementById('static_image_enabled').checked = settings.enabled;
+    document.getElementById('static_image_width').value = settings.panelWidth;
+    document.getElementById('static_image_width_value').textContent = settings.panelWidth + 'px';
+    document.getElementById('static_image_collapsed').checked = settings.collapsed;
+    document.getElementById('static_image_autohide').checked = settings.autoHide;
+    document.getElementById('static_image_delay').value = settings.autoHideDelay;
+    
+    // Show/hide delay group
+    document.getElementById('static_image_delay_group').style.display = 
+        settings.autoHide ? '' : 'none';
+    
+    // Event listeners
+    document.getElementById('static_image_enabled').addEventListener('change', function(e) {
+        settings.enabled = e.target.checked;
+        extension.saveSettings();
+    });
+    
+    document.getElementById('static_image_url').addEventListener('change', function(e) {
+        settings.imageUrl = e.target.value;
+        extension.saveSettings();
+        extension.updatePanelImage();
+    });
+    
+    document.getElementById('static_image_width').addEventListener('input', function(e) {
+        const width = parseInt(e.target.value, 10);
+        document.getElementById('static_image_width_value').textContent = width + 'px';
+        extension.updatePanelWidth(width);
+    });
+    
+    document.getElementById('static_image_collapsed').addEventListener('change', function(e) {
+        settings.collapsed = e.target.checked;
+        extension.saveSettings();
+    });
+    
+    document.getElementById('static_image_autohide').addEventListener('change', function(e) {
+        settings.autoHide = e.target.checked;
+        document.getElementById('static_image_delay_group').style.display = 
+            e.target.checked ? '' : 'none';
+        extension.saveSettings();
+    });
+    
+    document.getElementById('static_image_delay').addEventListener('change', function(e) {
+        settings.autoHideDelay = parseInt(e.target.value, 10);
+        extension.saveSettings();
+    });
+    
+    document.getElementById('static_image_add_image').addEventListener('click', async function() {
+        const imagePath = prompt('Enter image path (e.g., assets/myimage.png):');
+        
+        if (!imagePath) return;
+        
+        if (!imagePath.trim()) {
+            alert('Please enter a valid path');
+            return;
+        }
+        
+        if (!settings.availableImages.includes(imagePath)) {
+            settings.availableImages.push(imagePath);
+            
+            const option = document.createElement('option');
+            option.value = imagePath;
+            option.textContent = imagePath.split('/').pop();
+            dropdown.appendChild(option);
+            
+            extension.saveSettings();
+            alert('Image added! Place the image file in the specified path.');
+        } else {
+            alert('This image is already in the list.');
+        }
+    });
+})();
+</script>

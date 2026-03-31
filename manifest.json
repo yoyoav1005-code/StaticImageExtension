@@ -1,14 +1,11 @@
 {
-    "display_name": "Static Side Image",
-    "loading_order": 10,
-    "requires": [],
-    "optional": [],
-    "dependencies": [],
+    "display_name": "Static Image Panel",
+    "author": "Your Name",
+    "version": "2.0.0",
+    "description": "Display a static image panel on the side of the interface with customizable width, auto-hide, and collapse features",
     "js": "index.js",
     "css": "style.css",
-    "author": "Your Name",
-    "version": "1.0.0",
-    "homePage": "https://github.com/yourusername/static-image-extension",
+    "minimum_client_version": "1.0.0",
     "auto_update": false,
-    "minimum_client_version": "1.0.0"
+    "homePage": "https://github.com/your/repo"
 }

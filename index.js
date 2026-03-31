@@ -1,399 +1,372 @@
 /**
- * Static Side Image Extension
- * Displays a static image on the right side of SillyTavern
+ * Static Image Extension v2.0.0
+ * 
+ * A SillyTavern extension that displays a static image panel on the side
+ * with customizable width, auto-hide, and collapse features.
  */
 
-// ========================================
-// Configuration
-// ========================================
-const CONFIG = {
-    DEFAULT_PANEL_WIDTH: 250,
-    DEFAULT_TAB_WIDTH: 50,
-    DEFAULT_VISIBLE: true,
-    DEFAULT_DISPLAY_ENABLED: true,
-    IMAGES_FOLDER: 'assets/images/',
-    PLACEHOLDER_IMAGE: 'assets/placeholder.png'
-};
+(function() {
+    'use strict';
 
-// ========================================
-// State Management
-// ========================================
-let state = {
-    isVisible: CONFIG.DEFAULT_VISIBLE,
-    isDisplayEnabled: CONFIG.DEFAULT_DISPLAY_ENABLED,
-    currentImage: null,
-    images: [],
-    fileSystemHandle: null
-};
+    // Module identifier
+    const MODULE_NAME = 'StaticImageExtension';
 
-// ========================================
-// File System Manager
-// ========================================
-class FileSystemManager {
-    async requestAccess() {
-        try {
-            // Get the extension root directory
-            const rootHandle = await window.showDirectoryPicker({
-                mode: 'readwrite'
-            });
-            
-            // Navigate to assets/images folder
-            const assetsHandle = await rootHandle.getDirectoryHandle('assets', { create: true });
-            const imagesHandle = await assetsHandle.getDirectoryHandle('images', { create: true });
-            
-            state.fileSystemHandle = imagesHandle;
-            return true;
-        } catch (error) {
-            console.error('[StaticImageExtension] File System Access failed:', error);
-            return false;
-        }
-    }
+    // Default settings
+    const defaultSettings = Object.freeze({
+        enabled: true,
+        imageUrl: 'assets/placeholder.png',
+        panelWidth: 250,
+        collapsed: false,
+        autoHide: false,
+        autoHideDelay: 30,
+        availableImages: ['assets/placeholder.png'],
+    });
 
-    async listImages() {
-        if (!state.fileSystemHandle) {
-            return [];
+    // State variables
+    let idleTimer = null;
+    let settingsInitialized = false;
+
+    /**
+     * Get or initialize settings from SillyTavern's extension settings
+     * @returns {Object} Settings object
+     */
+    function getSettings() {
+        const { extensionSettings } = SillyTavern.getContext();
+        
+        // Initialize settings if they don't exist
+        if (!extensionSettings[MODULE_NAME]) {
+            extensionSettings[MODULE_NAME] = structuredClone(defaultSettings);
         }
 
-        const images = [];
-        for await (const entry of state.fileSystemHandle.values()) {
-            if (entry.kind === 'file') {
-                const fileName = entry.name.toLowerCase();
-                if (fileName.endsWith('.png') || fileName.endsWith('.jpg') || 
-                    fileName.endsWith('.jpeg') || fileName.endsWith('.webp')) {
-                    images.push({
-                        name: entry.name,
-                        handle: entry
-                    });
-                }
+        // Ensure all default keys exist (helpful after updates)
+        for (const key of Object.keys(defaultSettings)) {
+            if (!Object.hasOwn(extensionSettings[MODULE_NAME], key)) {
+                extensionSettings[MODULE_NAME][key] = defaultSettings[key];
             }
         }
-        return images;
+
+        return extensionSettings[MODULE_NAME];
     }
 
-    async uploadImage(file) {
-        if (!state.fileSystemHandle) {
-            throw new Error('File system access not granted');
-        }
-
-        try {
-            const fileHandle = await state.fileSystemHandle.getFileHandle(file.name, { create: true });
-            const writable = await fileHandle.createWritable();
-            await writable.write(file);
-            await writable.close();
-            return true;
-        } catch (error) {
-            console.error('[StaticImageExtension] Upload failed:', error);
-            return false;
-        }
+    /**
+     * Save settings to SillyTavern
+     */
+    function saveSettings() {
+        const { saveSettingsDebounced } = SillyTavern.getContext();
+        saveSettingsDebounced();
     }
 
-    async getImageUrl(handle) {
-        try {
-            const file = await handle.getFile();
-            return URL.createObjectURL(file);
-        } catch (error) {
-            console.error('[StaticImageExtension] Get image URL failed:', error);
-            return null;
-        }
-    }
-}
-
-// ========================================
-// UI Manager
-// ========================================
-class UIManager {
-    constructor() {
-        this.panel = null;
-        this.tab = null;
-        this.settingsButton = null;
-        this.imageElement = null;
-    }
-
-    createPanel() {
-        this.panel = document.createElement('div');
-        this.panel.className = 'static-image-panel';
+    /**
+     * Initialize settings if not already done
+     */
+    function initSettings() {
+        if (settingsInitialized) return;
         
-        this.imageElement = document.createElement('img');
-        this.imageElement.alt = 'Static side image';
-        this.imageElement.src = CONFIG.PLACEHOLDER_IMAGE;
+        getSettings(); // Ensure settings exist
+        settingsInitialized = true;
+    }
+
+    /**
+     * Build the settings panel HTML
+     * @returns {string} Settings HTML
+     */
+    function buildSettingsPanel() {
+        const settings = getSettings();
         
-        this.panel.appendChild(this.imageElement);
-        document.body.appendChild(this.panel);
-    }
-
-    createTab() {
-        this.tab = document.createElement('div');
-        this.tab.className = 'static-image-tab';
-        
-        const tabImage = document.createElement('img');
-        tabImage.alt = 'Toggle image panel';
-        tabImage.src = CONFIG.PLACEHOLDER_IMAGE;
-        
-        this.tab.appendChild(tabImage);
-        this.tab.addEventListener('click', () => this.toggleVisibility());
-        
-        document.body.appendChild(this.tab);
-        return tabImage;
-    }
-
-    createSettingsButton() {
-        this.settingsButton = document.createElement('button');
-        this.settingsButton.className = 'static-image-settings';
-        this.settingsButton.innerHTML = '&#9881;'; // Gear icon
-        this.settingsButton.title = 'Image Settings';
-        this.settingsButton.addEventListener('click', () => {
-            settingsManager.showModal();
-        });
-        
-        if (this.panel) {
-            this.panel.appendChild(this.settingsButton);
-        }
-    }
-
-    toggleVisibility() {
-        state.isVisible = !state.isVisible;
-        this.updateVisibility();
-    }
-
-    updateVisibility() {
-        if (state.isDisplayEnabled) {
-            if (state.isVisible) {
-                if (this.panel) this.panel.style.display = 'block';
-                if (this.tab) this.tab.style.display = 'none';
-            } else {
-                if (this.panel) this.panel.style.display = 'none';
-                if (this.tab) this.tab.style.display = 'block';
-            }
-        } else {
-            if (this.panel) this.panel.style.display = 'none';
-            if (this.tab) this.tab.style.display = 'none';
-        }
-    }
-
-    updateImage(src) {
-        if (this.imageElement) {
-            this.imageElement.src = src;
-        }
-        // Also update tab image if it exists
-        const tabImg = this.tab?.querySelector('img');
-        if (tabImg) {
-            tabImg.src = src;
-        }
-    }
-}
-
-// ========================================
-// Settings Manager
-// ========================================
-class SettingsManager {
-    constructor() {
-        this.modal = null;
-        this.overlay = null;
-    }
-
-    async showModal() {
-        this.createModal();
-        await this.populateDropdown();
-        this.attachEventListeners();
-    }
-
-    createModal() {
-        // Create overlay
-        this.overlay = document.createElement('div');
-        this.overlay.className = 'static-image-modal-overlay';
-        
-        // Create modal
-        this.modal = document.createElement('div');
-        this.modal.className = 'static-image-modal';
-        
-        this.modal.innerHTML = `
-            <div class="static-image-modal-header">
-                <span class="static-image-modal-title">Static Image Settings</span>
-                <button class="static-image-modal-close">&times;</button>
+        return `
+            <div class="setting-group">
+                <label class="setting-label">
+                    <input type="checkbox" id="static_image_enabled" ${settings.enabled ? 'checked' : ''}>
+                    Enable Static Image Panel
+                </label>
             </div>
             
-            <div class="static-image-form-group">
-                <label class="static-image-form-label">Select Image</label>
-                <select class="static-image-dropdown" id="static-image-select">
-                    <option value="">-- No images available --</option>
+            <div class="setting-group">
+                <label for="static_image_url">Image Source:</label>
+                <select id="static_image_url" class="setting-control">
+                    ${settings.availableImages.map(img => 
+                        `<option value="${img}" ${settings.imageUrl === img ? 'selected' : ''}>${img.split('/').pop()}</option>`
+                    ).join('')}
                 </select>
             </div>
             
-            <div class="static-image-form-group">
-                <label class="static-image-form-label">Upload Image</label>
-                <div class="static-image-upload-area" id="static-image-drop">
-                    <p>Drag and drop an image here, or click to select</p>
-                    <input type="file" id="static-image-file" accept="image/*" style="display: none;">
-                </div>
+            <div class="setting-group">
+                <label for="static_image_width">Panel Width: <span id="static_image_width_value">${settings.panelWidth}px</span></label>
+                <input type="range" id="static_image_width" class="setting-control" 
+                       min="150" max="400" value="${settings.panelWidth}">
             </div>
             
-            <div class="static-image-form-group">
-                <div class="static-image-toggle-container">
-                    <label class="static-image-form-label">Enable Display</label>
-                    <label class="static-image-toggle-switch">
-                        <input type="checkbox" id="static-image-toggle" ${state.isDisplayEnabled ? 'checked' : ''}>
-                        <span class="static-image-toggle-slider"></span>
-                    </label>
-                </div>
+            <div class="setting-group">
+                <label class="setting-label">
+                    <input type="checkbox" id="static_image_collapsed" ${settings.collapsed ? 'checked' : ''}>
+                    Start Collapsed
+                </label>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">
+                    <input type="checkbox" id="static_image_autohide" ${settings.autoHide ? 'checked' : ''}>
+                    Auto-hide when idle
+                </label>
+            </div>
+            
+            <div class="setting-group" id="static_image_delay_group" style="${settings.autoHide ? '' : 'display:none'}">
+                <label for="static_image_delay">Hide After (seconds):</label>
+                <input type="number" id="static_image_delay" class="setting-control" 
+                       min="5" max="300" value="${settings.autoHideDelay}">
+            </div>
+            
+            <div class="setting-group">
+                <button id="static_image_add_image" class="setting-btn">Add Custom Image</button>
+                <small class="setting-hint">Add image path (e.g., assets/myimage.png)</small>
             </div>
         `;
-        
-        document.body.appendChild(this.overlay);
-        document.body.appendChild(this.modal);
     }
 
-    async populateDropdown() {
-        const dropdown = this.modal.querySelector('#static-image-select');
-        dropdown.innerHTML = '';
+    /**
+     * Build the panel HTML
+     * @returns {jQuery} Panel element
+     */
+    function buildPanel() {
+        const settings = getSettings();
         
-        state.images = await fileSystemManager.listImages();
+        const panel = $(`
+            <div id="static_image_panel" class="static-image-panel" style="width: ${settings.panelWidth}px">
+                <div class="panel-header">
+                    <span class="panel-title">Static Image</span>
+                    <button class="panel-collapse-btn" id="static_image_collapse_btn">−</button>
+                </div>
+                <div class="panel-content">
+                    <img id="static_image_panel_img" src="${settings.imageUrl}" alt="Static Image">
+                </div>
+            </div>
+        `);
         
-        if (state.images.length === 0) {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = '-- No images available --';
-            dropdown.appendChild(option);
-            return;
-        }
+        return panel;
+    }
+
+    /**
+     * Update panel image
+     */
+    function updatePanelImage() {
+        const settings = getSettings();
+        const img = $('#static_image_panel_img');
         
-        for (const image of state.images) {
-            const option = document.createElement('option');
-            option.value = image.name;
-            option.textContent = image.name;
-            dropdown.appendChild(option);
-        }
-        
-        // Set current selection
-        if (state.currentImage) {
-            dropdown.value = state.currentImage.name;
+        if (img.length) {
+            img.fadeOut(100, () => {
+                img.attr('src', settings.imageUrl).fadeIn(200);
+            });
         }
     }
 
-    attachEventListeners() {
-        // Close button
-        const closeBtn = this.modal.querySelector('.static-image-modal-close');
-        closeBtn.addEventListener('click', () => this.closeModal());
+    /**
+     * Update panel width
+     * @param {number} width - New width in pixels
+     */
+    function updatePanelWidth(width) {
+        const settings = getSettings();
+        settings.panelWidth = Math.max(150, Math.min(400, width));
+        saveSettings();
         
-        // Overlay click to close
-        this.overlay.addEventListener('click', () => this.closeModal());
+        $('#static_image_panel').css('width', settings.panelWidth + 'px');
+        $('#static_image_width_value').text(settings.panelWidth + 'px');
+    }
+
+    /**
+     * Toggle panel collapsed state
+     * @param {boolean} collapsed - Collapsed state
+     */
+    function togglePanelCollapsed(collapsed) {
+        const settings = getSettings();
+        settings.collapsed = collapsed;
+        saveSettings();
         
-        // Image selection change
-        const dropdown = this.modal.querySelector('#static-image-select');
-        dropdown.addEventListener('change', async (e) => {
-            const imageName = e.target.value;
-            if (imageName) {
-                const image = state.images.find(img => img.name === imageName);
-                if (image) {
-                    const url = await fileSystemManager.getImageUrl(image.handle);
-                    if (url) {
-                        uiManager.updateImage(url);
-                        state.currentImage = image;
-                    }
+        const panel = $('#static_image_panel');
+        const content = panel.find('.panel-content');
+        
+        if (collapsed) {
+            panel.addClass('collapsed');
+            content.hide();
+        } else {
+            panel.removeClass('collapsed');
+            content.show();
+        }
+    }
+
+    /**
+     * Start auto-hide timer
+     */
+    function startIdleTimer() {
+        const settings = getSettings();
+        
+        if (!settings.autoHide) return;
+        
+        clearTimeout(idleTimer);
+        
+        idleTimer = setTimeout(() => {
+            if (!settings.collapsed) {
+                togglePanelCollapsed(true);
+            }
+        }, settings.autoHideDelay * 1000);
+    }
+
+    /**
+     * Reset auto-hide timer
+     */
+    function resetIdleTimer() {
+        const settings = getSettings();
+        
+        if (!settings.autoHide) return;
+        
+        clearTimeout(idleTimer);
+        idleTimer = null;
+    }
+
+    /**
+     * Setup keyboard shortcuts
+     */
+    function setupKeyboardShortcuts() {
+        $(document).on('keydown.static-image-extension', (e) => {
+            // Ctrl+Shift+I to toggle panel
+            if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+                e.preventDefault();
+                const settings = getSettings();
+                settings.enabled = !settings.enabled;
+                saveSettings();
+                
+                if (settings.enabled) {
+                    $('#static_image_panel').fadeIn(200);
+                } else {
+                    $('#static_image_panel').fadeOut(200);
                 }
             }
         });
+    }
+
+    /**
+     * Setup event listeners
+     */
+    function setupEventListeners() {
+        const { eventSource, event_types } = SillyTavern.getContext();
         
-        // Upload area click
-        const dropArea = this.modal.querySelector('#static-image-drop');
-        const fileInput = this.modal.querySelector('#static-image-file');
+        // Panel collapse button
+        $('#static_image_collapse_btn').on('click', function() {
+            const settings = getSettings();
+            togglePanelCollapsed(!settings.collapsed);
+        });
         
-        dropArea.addEventListener('click', () => fileInput.click());
+        // Width slider
+        $('#static_image_width').on('input', function(e) {
+            updatePanelWidth(parseInt(e.target.value, 10));
+        });
         
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                await this.handleUpload(file);
+        // Add image button
+        $('#static_image_add_image').on('click', async () => {
+            const imagePath = prompt('Enter image path (e.g., assets/myimage.png):');
+            
+            if (!imagePath) return;
+            
+            const settings = getSettings();
+            
+            // Validate path
+            if (!imagePath.trim()) {
+                alert('Please enter a valid path');
+                return;
+            }
+            
+            // Add to available images if not already present
+            if (!settings.availableImages.includes(imagePath)) {
+                settings.availableImages.push(imagePath);
+                
+                // Update dropdown
+                const option = $(`<option value="${imagePath}">${imagePath.split('/').pop()}</option>`);
+                $('#static_image_url').append(option);
+                
+                saveSettings();
+                alert('Image added! Place the image file in the specified path.');
+            } else {
+                alert('This image is already in the list.');
             }
         });
         
-        // Drag and drop
-        dropArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropArea.classList.add('drag-over');
+        // Mouse/keyboard activity for auto-hide
+        $(document).on('mousemove.keydown.static-image-extension', resetIdleTimer);
+        
+        // Listen to ST events
+        eventSource.on(event_types.CHAT_CHANGED, () => {
+            // Could update panel based on chat context
         });
         
-        dropArea.addEventListener('dragleave', () => {
-            dropArea.classList.remove('drag-over');
-        });
-        
-        dropArea.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            dropArea.classList.remove('drag-over');
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                await this.handleUpload(file);
+        // Cleanup on unload
+        $(window).on('beforeunload', () => {
+            $(document).off('.static-image-extension');
+            if (idleTimer) {
+                clearTimeout(idleTimer);
+                idleTimer = null;
             }
-        });
-        
-        // Toggle switch
-        const toggle = this.modal.querySelector('#static-image-toggle');
-        toggle.addEventListener('change', (e) => {
-            state.isDisplayEnabled = e.target.checked;
-            uiManager.updateVisibility();
         });
     }
 
-    async handleUpload(file) {
-        const success = await fileSystemManager.uploadImage(file);
-        if (success) {
-            alert('Image uploaded successfully!');
-            await this.populateDropdown();
+    /**
+     * Initialize the extension
+     */
+    function init() {
+        console.log('[StaticImageExtension] Initializing...');
+        
+        // Initialize settings
+        initSettings();
+        
+        const settings = getSettings();
+        
+        // Build and add panel
+        const panel = buildPanel();
+        $('body').append(panel);
+        
+        // Show/hide panel based on enabled state
+        if (settings.enabled) {
+            panel.show();
         } else {
-            alert('Failed to upload image. Please try again.');
+            panel.hide();
         }
-    }
-
-    closeModal() {
-        if (this.modal) this.modal.remove();
-        if (this.overlay) this.overlay.remove();
-        this.modal = null;
-        this.overlay = null;
-    }
-}
-
-// ========================================
-// Initialization
-// ========================================
-const fileSystemManager = new FileSystemManager();
-const uiManager = new UIManager();
-const settingsManager = new SettingsManager();
-
-async function init() {
-    console.log('[StaticImageExtension] Initializing...');
-    
-    // Request file system access
-    const fsAccess = await fileSystemManager.requestAccess();
-    if (!fsAccess) {
-        console.warn('[StaticImageExtension] File system access not available. Images must be placed manually in assets/images/');
-    }
-    
-    // Create UI elements
-    uiManager.createPanel();
-    const tabImage = uiManager.createTab();
-    uiManager.createSettingsButton();
-    
-    // Load images and set default
-    if (fsAccess) {
-        state.images = await fileSystemManager.listImages();
-        if (state.images.length > 0) {
-            state.currentImage = state.images[0];
-            const url = await fileSystemManager.getImageUrl(state.currentImage.handle);
-            if (url) {
-                uiManager.updateImage(url);
-            }
+        
+        // Apply collapsed state
+        if (settings.collapsed) {
+            panel.addClass('collapsed');
+            panel.find('.panel-content').hide();
         }
+        
+        // Setup event listeners
+        setupEventListeners();
+        setupKeyboardShortcuts();
+        
+        // Start auto-hide timer if enabled
+        if (settings.autoHide) {
+            startIdleTimer();
+        }
+        
+        console.log('[StaticImageExtension] Initialized successfully');
     }
-    
-    // Set initial visibility
-    uiManager.updateVisibility();
-}
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
-}
+    /**
+     * Register settings panel
+     */
+    function registerSettings() {
+        // This would be called by SillyTavern's settings system
+        // The actual registration happens through the settings.html file
+    }
 
-// Export for potential external use
-export { CONFIG, state, fileSystemManager, uiManager, settingsManager };
+    // Initialize when DOM is ready
+    $(document).ready(() => {
+        init();
+    });
+
+    // Expose for settings panel
+    window[MODULE_NAME] = {
+        buildSettingsPanel,
+        getSettings,
+        updatePanelImage,
+        updatePanelWidth,
+        togglePanelCollapsed,
+    };
+
+})();

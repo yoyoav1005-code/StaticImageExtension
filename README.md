@@ -1,126 +1,132 @@
-# Static Side Image Extension
+# Static Image Extension v2.0.0
 
-A SillyTavern extension that displays a static image on the right side of the chat interface.
+A SillyTavern extension that displays a static image panel on the side of the interface with customizable width, auto-hide, and collapse features.
 
 ## Features
 
-- **Static Image Display**: Shows a user-selected image on the right side of the screen
-- **Collapsible Panel**: Shrinks to a mini-thumbnail tab when hidden
-- **Image Management**: Upload images via drag-and-drop to a dedicated folder
-- **Image Selection**: Choose from available images via dropdown with thumbnail previews
-- **Toggle Display**: Enable/disable the image panel display
-- **File System Integration**: Uses Browser File System Access API for direct file storage
-
-## Requirements
-
-- SillyTavern latest version
-- Chromium-based browser (Chrome, Edge, Opera) for File System Access API support
+- **Persistent Side Panel** - Fixed right-side panel with static image
+- **Image Selection** - Dropdown from manually placed images in `assets/`
+- **Customizable Width** - Slider (150-400px) with live preview
+- **Auto-hide** - Hide panel after configurable idle time
+- **Collapse Mode** - Minimize panel to icon-only view
+- **Settings Persistence** - Official ST settings API
+- **Keyboard Shortcuts** - Ctrl+Shift+I to toggle panel
+- **Smooth Transitions** - CSS animations for panel show/hide
 
 ## Installation
 
-### Method 1: Manual Installation
+1. Copy the `StaticImageExtension` folder to:
+   - Production: `SillyTavern/scripts/extensions/third-party/StaticImageExtension/`
+   - Development: `SillyTavern/data/<user-handle>/extensions/StaticImageExtension/`
 
-1. Download the `StaticImageExtension` folder
-2. Navigate to your SillyTavern data directory:
-   ```
-   data/<your-user-handle>/extensions/
-   ```
-3. Copy the extension folder into the `extensions` directory
-4. Restart SillyTavern or refresh the page
-5. Enable the extension in Settings → Extensions
+2. Enable the extension in SillyTavern's extension settings
 
-### Method 2: Development Installation
-
-1. Clone or copy the extension to your development machine
-2. Place in the third-party extensions folder:
-   ```
-   scripts/extensions/third-party/StaticImageExtension/
-   ```
-3. Follow the same enablement steps as Method 1
+3. Place custom images in `StaticImageExtension/assets/` folder
 
 ## Usage
 
-### Initial Setup
+### Basic Usage
 
-1. Enable the extension in SillyTavern Settings → Extensions
-2. When prompted, grant file system access permission (Chrome/Edge only)
-3. The image panel will appear on the right side of the screen
+1. Open SillyTavern settings
+2. Navigate to Extensions
+3. Enable "Static Image Panel"
+4. Configure settings:
+   - Select image from dropdown
+   - Adjust panel width with slider
+   - Enable auto-hide if desired
 
-### Managing Images
+### Keyboard Shortcuts
 
-1. Click the gear icon (⚙️) on the image panel to open settings
-2. **Upload Images**: Drag and drop images onto the upload area, or click to browse
-3. **Select Image**: Choose from the dropdown menu to display a different image
-4. **Toggle Display**: Use the "Enable Display" switch to show/hide the panel entirely
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+I` | Toggle panel visibility |
 
-### Collapsing the Panel
+### Adding Custom Images
 
-- Click the tab on the right edge to expand the panel
-- Click the gear icon and use settings to collapse/expand
+1. Place image files in `StaticImageExtension/assets/` folder
+2. In extension settings, click "Add Custom Image"
+3. Enter the path (e.g., `assets/myimage.png`)
+4. Select from dropdown
 
-### File Structure
+## Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `enabled` | Boolean | `true` | Show/hide the panel |
+| `imageUrl` | String | `assets/placeholder.svg` | Path to selected image |
+| `panelWidth` | Number | `250` | Width in pixels (150-400) |
+| `collapsed` | Boolean | `false` | Panel collapsed state |
+| `autoHide` | Boolean | `false` | Hide panel when idle |
+| `autoHideDelay` | Number | `30` | Seconds before auto-hide |
+| `availableImages` | Array | `['assets/placeholder.svg']` | List of available images |
+
+## File Structure
 
 ```
 StaticImageExtension/
-├── manifest.json          # Extension metadata
-├── index.js              # Main JavaScript logic
-├── style.css             # All styling
-├── README.md             # This file
+├── manifest.json           # Extension metadata
+├── index.js                # Main extension logic
+├── style.css               # Extension styles
+├── settings.html           # Settings UI template
+├── README.md               # This file
 └── assets/
-    ├── placeholder.png   # Default placeholder image
-    └── images/           # User-uploaded images directory
+    └── placeholder.svg     # Default placeholder image
 ```
-
-## Browser Compatibility
-
-| Feature | Chrome/Edge | Firefox | Safari |
-|---------|-------------|---------|--------|
-| File System Access API | ✅ Supported | ❌ Not Supported | ❌ Not Supported |
-| CSS object-fit | ✅ Supported | ✅ Supported | ✅ Supported |
-| Drag-and-Drop API | ✅ Supported | ✅ Supported | ✅ Supported |
-
-**Fallback Strategy**: For non-Chromium browsers, users must manually place images in the `assets/images/` folder.
 
 ## Troubleshooting
 
-| Issue | Possible Cause | Solution |
-|-------|----------------|----------|
-| Image doesn't appear | Wrong image path | Verify image exists in `assets/images/` folder |
-| Panel overlaps chat | Z-index conflict | Increase `z-index` value in CSS (currently 9999) |
-| Toggle button not working | JavaScript error | Check browser console for errors |
-| Extension not loading | Invalid manifest | Validate `manifest.json` syntax |
-| Image appears stretched | Wrong object-fit | CSS uses `object-fit: cover` - acceptable |
-| File system access denied | Browser not supported | Use Chrome/Edge or manually place images |
-| Drag-and-drop not working | File type rejected | Ensure file is a valid image (PNG, JPG, WebP) |
-| Dropdown empty | No images in folder | Upload images or manually place in `assets/images/` |
-| Settings modal doesn't close | Event listener issue | Reload page and try again |
-| Tab doesn't expand | Click handler missing | Check browser console for errors |
+### Panel not showing
 
-## Uninstallation
+1. Check if extension is enabled in settings
+2. Verify `manifest.json` is valid JSON
+3. Check browser console for errors
 
-1. Open SillyTavern Settings → Extensions
-2. Disable the "Static Side Image" extension
-3. Delete the extension folder from:
-   ```
-   data/<your-user-handle>/extensions/StaticImageExtension/
-   ```
-4. Refresh the page
+### Image not displaying
 
-## Future Enhancements
+1. Verify image path is correct
+2. Check image format (PNG, JPG, SVG supported)
+3. Ensure image file exists in specified path
 
-- Multiple Image Support: Allow users to configure multiple images and cycle through them
-- Position Customization: Allow users to choose left/right positioning
-- Panel Width Slider: Add slider to adjust panel width dynamically
-- Opacity Control: Add slider to adjust panel transparency
-- Character-Specific Images: Display different images based on active character
-- Animation Support: Add CSS animations or transitions for the image
-- Image Rotation: Add rotation controls for portrait/landscape orientation
-- Auto-hide Timer: Automatically collapse panel after period of inactivity
+### Settings not saving
+
+1. Check SillyTavern server is running
+2. Verify `extensionSettings` object is accessible
+3. Check browser console for errors
+
+## Development
+
+### Architecture
+
+- Uses official SillyTavern `getContext()` API
+- Settings stored in `extensionSettings[MODULE_NAME]`
+- Event system via `eventSource.emit()` / `eventSource.on()`
+- Cleanup handlers for proper lifecycle management
+
+### API Usage
+
+```javascript
+// Get context
+const { extensionSettings, saveSettingsDebounced, eventSource } = SillyTavern.getContext();
+
+// Get settings
+function getSettings() {
+    if (!extensionSettings[MODULE_NAME]) {
+        extensionSettings[MODULE_NAME] = structuredClone(defaultSettings);
+    }
+    return extensionSettings[MODULE_NAME];
+}
+
+// Save settings
+saveSettingsDebounced();
+
+// Emit events
+await eventSource.emit('custom-event', { data });
+```
 
 ## License
 
-MIT License - Feel free to use and modify as needed.
+MIT
 
-## Support
+## Author
 
-For issues and feature requests, please open an issue on the GitHub repository.
+Your Name
