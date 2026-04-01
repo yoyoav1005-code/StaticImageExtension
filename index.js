@@ -419,6 +419,10 @@ async function init() {
     // Load settings
     await loadSettings();
     
+    // Load settings HTML from file and append to extensions settings panel
+    const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
+    $('#extensions_settings').append(settingsHtml);
+    
     // Build and append panel
     const panel = buildPanel();
     $('#root').append(panel);
