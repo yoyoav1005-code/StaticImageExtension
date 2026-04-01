@@ -272,6 +272,8 @@ function setupSettingsListeners() {
     $('#static_image_url').on('change', function() {
         const settings = getSettings();
         settings.imageUrl = $(this).val();
+        // Update the current image indicator
+        updateCurrentImageIndicator();
     });
     
     // Width slider
@@ -387,6 +389,25 @@ function populateSettingsUI() {
     
     // Show/hide delay group
     $('#static_image_delay_group').toggle(settings.autoHide);
+    
+    // Update the current image indicator
+    updateCurrentImageIndicator();
+}
+
+/**
+ * Update the current image indicator in the settings UI
+ */
+function updateCurrentImageIndicator() {
+    const selectedValue = $('#static_image_url').val();
+    const indicator = $('#static_image_current');
+    
+    if (selectedValue) {
+        // Extract just the filename for display
+        const fileName = selectedValue.split('/').pop();
+        indicator.text(`Selected: ${fileName}`);
+    } else {
+        indicator.text('');
+    }
 }
 
 /**
@@ -398,52 +419,28 @@ async function init() {
     // Load settings
     await loadSettings();
     
-    const settings = getSettings();
-    
-    // Build and add panel
+    // Build and append panel
     const panel = buildPanel();
-    $('body').append(panel);
-    
-    // Show/hide panel based on enabled state
-    if (settings.enabled) {
-        panel.show();
-    } else {
-        panel.hide();
-    }
-    
-    // Apply collapsed state
-    if (settings.collapsed) {
-        panel.addClass('collapsed');
-        panel.find('.panel-content').hide();
-    }
+    $('#root').append(panel);
     
     // Setup event listeners
     setupSettingsListeners();
     setupPanelListeners();
-    setupKeyboardShortcuts();
     
-    // Start auto-hide timer if enabled
-    if (settings.autoHide) {
-        startIdleTimer();
-    }
-    
-    console.log('[StaticImageExtension] Initialized successfully');
-}
-
-// Main entry point - called when extension is loaded
-jQuery(async () => {
-    // Load settings HTML from file
-    const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
-    
-    // Append settings to extensions settings panel
-    $("#extensions_settings").append(settingsHtml);
-    
-    // Populate settings UI
+    // Populate UI with current settings
     populateSettingsUI();
     
-    // Initialize the extension
-    await init();
-});
+    // Apply settings
+    applySettings();
+    
+    // Setup keyboard shortcuts
+    setupKeyboardShortcuts();
+    
+    console.log('[StaticImageExtension] Initialized');
+}
 
-// Export functions for settings panel
-export { getSettings, updatePanelImage, updatePanelWidth, togglePanelCollapsed, saveAllSettings };
+// Initialize when DOM is ready
+$(document).ready(init);
+
+// Export for testing
+export { init, getSettings, loadSettings };

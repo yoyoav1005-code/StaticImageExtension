@@ -7,11 +7,12 @@
 
 <div class="setting-group">
     <label for="static_image_url">Image Source:</label>
-    <div style="display: flex; gap: 10px;">
+    <div style="display: flex; gap: 10px; align-items: center;">
         <select id="static_image_url" class="setting-control" style="flex: 1;">
             <!-- Options populated by JavaScript -->
         </select>
         <button id="static_image_remove_image" class="setting-btn" style="background-color: #f44336;">Remove Image</button>
+        <span id="static_image_current" class="setting-hint" style="margin-left: 10px; font-weight: bold; color: #4CAF50;"></span>
     </div>
     <small class="setting-hint">Select an image or remove it from the list</small>
 </div>
